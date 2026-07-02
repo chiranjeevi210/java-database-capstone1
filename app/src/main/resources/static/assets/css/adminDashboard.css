@@ -1,94 +1,162 @@
-/*this is the style sheet for the adminDashboard. */
+/* Universal Base Architecture Resets */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
 
-/* 
-Global Reset (`*`)
+html, body {
+    height: 100%;
+    font-family: Arial, sans-serif;
+    background-color: #f1f5f9;
+}
 
-* Purpose: Ensure consistent layout across all browsers.
-* Properties:
+/* Structural Engine Elements */
+.container {
+    width: 100%;
+    height: 100%;
+}
 
-  * `margin: 0` — removes default outer spacing from all elements.
-  * `padding: 0` — removes default inner spacing.
-  * `box-sizing: border-box` — ensures padding and borders are included within the total width/height of elements.
+.wrapper {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
 
-Base HTML & Body (`html, body`)
+.main-content {
+    flex: 1;
+    padding: 40px;
+    background-image: url('../images/admin-mesh.png');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
 
-* Purpose: Establish a full-height layout and apply a standard font across the page.
-* Properties:
+/* Control Elements Layout */
+.control-panel {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    align-items: center;
+    justify-content: space-between;
+    background-color: rgba(255, 255, 255, 0.9);
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+}
 
-  * `height: 100%` — allows containers to stretch to the full viewport height.
-  * `font-family: Arial, sans-serif` — applies a clean, readable sans-serif font.
+#searchBar {
+    flex: 1;
+    min-width: 250px;
+    padding: 12px 16px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    font-size: 1rem;
+}
 
-Main Layout Wrapper (`.wrapper`)
+#searchBar:focus {
+    outline: 2px solid #3b82f6;
+}
 
-* Purpose: Create a flexible, vertical layout that fills the entire screen.
-* Properties:
+.filter-section {
+    display: flex;
+    gap: 15px;
+}
 
-  * `display: flex` — enables flexbox for layout control.
-  * `flex-direction: column` — stacks children vertically.
-  * `min-height: 100vh` — ensures the wrapper always covers full screen height.
+.select-dropdown {
+    padding: 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    background-color: #ffffff;
+    min-width: 180px;
+    cursor: pointer;
+}
 
-Section Heading (`h2`)
+/* Button & Active Functional States */
+.button, .adminBtn {
+    background-color: #0f172a;
+    color: #ffffff;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
 
-* Purpose: Style the headings prominently for section separation.
-* Properties:
+.button:hover, .adminBtn:hover {
+    background-color: #1e293b;
+}
 
-  * `font-size: 32px` — makes the heading large and noticeable.
-  * `font-weight: bold` — emphasizes text.
-  * `margin-bottom: 50px` — creates space below the heading.
-  * `color: #003e3e` — uses a strong teal for visual anchoring.
+/* Data Layer Display Grid cards */
+.doctor-cards-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 25px;
+    justify-content: flex-start;
+}
 
-Main Content Section (`.main-content`)
+/* Dashboard Modal Context Workspace */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    align-items: center;
+    justify-content: center;
+}
 
-* Purpose: Layout the main content with padding and a background image.
-* Properties:
+.modal-content {
+    background-color: #ffffff;
+    padding: 40px;
+    border-radius: 10px;
+    width: 100%;
+    max-width: 550px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    position: relative;
+}
 
-  * `flex-grow: 1` — lets the content fill the available vertical space.
-  * `padding: 40px` — adds internal spacing around content.
-  * `display: flex` and `flex-direction: column` — organizes content in a vertical stack.
-  * `text-align: center` — centers the text.
-  * `background-image: url("index.png")` — sets a full-screen dashboard background.
-  * `background-size: cover` — ensures the image covers the whole section.
-  * `background-position: center` — centers the image.
-  * `background-repeat: no-repeat` — avoids tiling the image.
-  * `background-attachment: fixed` — fixes the image while scrolling.
+.close {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    font-size: 24px;
+    cursor: pointer;
+    color: #64748b;
+}
 
-Primary Button (`button`)
+.modal-content input, .modal-content select {
+    width: 100%;
+    padding: 12px;
+    margin-top: 8px;
+    margin-bottom: 20px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+}
 
-* Purpose: Design prominent, interactive buttons for main actions.
+.modal-content input:focus {
+    border-color: #3b82f6;
+    outline: none;
+}
 
-* Properties:
-
-  * `background-color: #A62B1F` — sets a bold red color.
-  * `color: white` — makes text stand out.
-  * `border: none` — removes any outline/border.
-  * `border-radius: 12px` — creates rounded corners.
-  * `padding: 10px 20px` — gives space inside the button.
-  * `margin-top: 20px` — adds spacing above the button.
-  * `width: 200px` — ensures consistent button width.
-  * `cursor: pointer` — shows a hand icon on hover.
-  * `font-size: 16px` — makes the text readable.
-
-* On Hover:
-
-  * Retains the same red background to maintain branding.
-
-Admin Button (`.adminBtn`)
-
-* Purpose: Provide a secondary button style for admin-specific actions.
-
-* Properties:
-
-  * `background-color: #f4f4f4` — uses a light grey background.
-  * `color: #333` — uses dark text for contrast.
-  * `font-weight: bold` — emphasizes text.
-  * `width: 110px` — smaller, compact width.
-  * `padding: 10px 0` — vertical padding only.
-  * `border: none` — clean look.
-  * `cursor: pointer` — indicates it's clickable.
-
-* On Hover**:
-
-   Changes text color to `#A62B1F` for brand consistency while keeping the background same.
-
-
-*/
+/* Responsive Adaptive Viewports */
+@media (max-width: 640px) {
+    .control-panel {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .filter-section {
+        flex-direction: column;
+    }
+    .doctor-cards-container {
+        justify-content: center;
+    }
+}
