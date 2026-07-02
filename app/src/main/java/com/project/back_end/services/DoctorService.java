@@ -29,10 +29,9 @@ public class DoctorService {
     private TokenService tokenService;
 
     /**
-     * 1. Fetches available time slots for a doctor on a given date by filtering out booked ones.
+     * Fetches available time slots for a doctor on a given date by filtering out booked ones.
      */
     public List<String> getDoctorAvailability(Long doctorId, LocalDate date) {
-        // Define baseline operating slots for the clinic
         List<String> masterSlots = Arrays.asList(
             "09:00-10:00", "10:00-11:00", "11:00-12:00", 
             "13:00-14:00", "14:00-15:00", "15:00-16:00", "16:00-17:00"
@@ -44,7 +43,6 @@ public class DoctorService {
         List<Appointment> bookedAppointments = appointmentRepository
                 .findByDoctorIdAndAppointmentTimeBetween(doctorId, startOfDay, endOfDay);
 
-        // Map booked appointment times to their matching text slot format
         Set<String> bookedSlots = bookedAppointments.stream()
             .map(a -> {
                 LocalTime time = a.getAppointmentTime().toLocalTime();
@@ -59,7 +57,7 @@ public class DoctorService {
 
     public int saveDoctor(Doctor doctor) {
         if (doctorRepository.findByEmail(doctor.getEmail()) != null) {
-            return -1; // Conflict: already exists
+            return -1;
         }
         try {
             doctorRepository.save(doctor);
@@ -71,7 +69,7 @@ public class DoctorService {
 
     public int updateDoctor(Doctor doctor) {
         if (doctor == null || doctor.getId() == null || !doctorRepository.existsById(doctor.getId())) {
-            return -1; // Not found
+            return -1;
         }
         try {
             doctorRepository.save(doctor);
@@ -114,7 +112,7 @@ public class DoctorService {
     }
 
     /**
-     * 2. Compound Criteria Multi-Filter Mechanics
+     * Compound Criteria Multi-Filter Mechanics
      */
     public Map<String, Object> filterDoctorsByNameSpecialtyandTime(String name, String specialty, String amorPm) {
         Map<String, Object> result = new HashMap<>();
@@ -143,8 +141,7 @@ public class DoctorService {
      */
     private List<Doctor> filterDoctorByTime(List<Doctor> doctors, String amorPm) {
         return doctors.stream().filter(doc -> {
-            // Evaluates doctor available times context elements
-            String availability = doc.getAvailability(); 
+            String availability = doc.getAvailableTimes(); 
             if (availability == null) return false;
             
             boolean hasAm = availability.contains("09:00") || availability.contains("10:00") || availability.contains("11:00");

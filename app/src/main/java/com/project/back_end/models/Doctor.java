@@ -1,17 +1,21 @@
 package com.project.back_end.models;
 
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
-@Table(name = "doctor") // Binds entity model directly to your MySQL table structure
+@Table(name = "doctor")
 public class Doctor {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY) // Matches your SQL AUTO_INCREMENT rule
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private String name;
@@ -20,13 +24,12 @@ public class Doctor {
     private String phone;
     private String specialty;
     
-    // Fixed field name conversion matching grading framework expectations
-    private String availableTimes;
+    // Updated field to a List annotated with @ElementCollection per instructions
+    @ElementCollection(fetch = FetchType.EAGER)
+    private List<String> availableTimes = new ArrayList<>();
 
-    // Required Zero-Argument Default Constructor Engine
     public Doctor() {}
 
-    // Complete Standard Encapsulation Accessors (Getters & Setters)
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -45,6 +48,6 @@ public class Doctor {
     public String getSpecialty() { return specialty; }
     public void setSpecialty(String specialty) { this.specialty = specialty; }
 
-    public String getAvailableTimes() { return availableTimes; }
-    public void setAvailableTimes(String availableTimes) { this.availableTimes = availableTimes; }
+    public List<String> getAvailableTimes() { return availableTimes; }
+    public void setAvailableTimes(List<String> availableTimes) { this.availableTimes = availableTimes; }
 }
