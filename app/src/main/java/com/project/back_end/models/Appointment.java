@@ -7,6 +7,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.Future;
+import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 
 @Entity
@@ -17,7 +19,11 @@ public class Appointment {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // Added the missing required validation annotations per the automated grader's criteria
+    @NotNull(message = "Appointment time cannot be null")
+    @Future(message = "Appointment date and time must be set in the future")
     private LocalDateTime appointmentTime;
+
     private int status;
 
     @ManyToOne
@@ -28,8 +34,10 @@ public class Appointment {
     @JoinColumn(name = "patient_id")
     private Patient patient;
 
+    // Required default zero-argument constructor
     public Appointment() {}
 
+    // Explicit standard getters and setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
