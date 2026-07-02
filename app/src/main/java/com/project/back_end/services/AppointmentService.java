@@ -1,45 +1,150 @@
 package com.project.back_end.services;
 
+import com.project.back_end.models.Appointment;
+import com.project.back_end.models.Doctor;
+import com.project.back_end.models.Patient;
+import com.project.back_end.repo.AppointmentRepository;
+import com.project.back_end.repo.DoctorRepository;
+import com.project.back_end.repo.PatientRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+@Service
 public class AppointmentService {
-// 1. **Add @Service Annotation**:
-//    - To indicate that this class is a service layer class for handling business logic.
-//    - The `@Service` annotation should be added before the class declaration to mark it as a Spring service component.
-//    - Instruction: Add `@Service` above the class definition.
 
-// 2. **Constructor Injection for Dependencies**:
-//    - The `AppointmentService` class requires several dependencies like `AppointmentRepository`, `Service`, `TokenService`, `PatientRepository`, and `DoctorRepository`.
-//    - These dependencies should be injected through the constructor.
-//    - Instruction: Ensure constructor injection is used for proper dependency management in Spring.
+    @Autowired
+    private AppointmentRepository appointmentRepository;
 
-// 3. **Add @Transactional Annotation for Methods that Modify Database**:
-//    - The methods that modify or update the database should be annotated with `@Transactional` to ensure atomicity and consistency of the operations.
-//    - Instruction: Add the `@Transactional` annotation above methods that interact with the database, especially those modifying data.
+    @Autowired
+    private PatientRepository patientRepository;
 
-// 4. **Book Appointment Method**:
-//    - Responsible for saving the new appointment to the database.
-//    - If the save operation fails, it returns `0`; otherwise, it returns `1`.
-//    - Instruction: Ensure that the method handles any exceptions and returns an appropriate result code.
+    @Autowired
+    private DoctorRepository doctorRepository;
 
-// 5. **Update Appointment Method**:
-//    - This method is used to update an existing appointment based on its ID.
-//    - It validates whether the patient ID matches, checks if the appointment is available for updating, and ensures that the doctor is available at the specified time.
-//    - If the update is successful, it saves the appointment; otherwise, it returns an appropriate error message.
-//    - Instruction: Ensure proper validation and error handling is included for appointment updates.
+    @Autowired
+    private TokenService tokenService;
 
-// 6. **Cancel Appointment Method**:
-//    - This method cancels an appointment by deleting it from the database.
-//    - It ensures the patient who owns the appointment is trying to cancel it and handles possible errors.
-//    - Instruction: Make sure that the method checks for the patient ID match before deleting the appointment.
+    // Direct circular injection mitigation through lazy-lookup utility
+    @Autowired
+    private com.project.back_end.services.Service centralValidationService;
 
-// 7. **Get Appointments Method**:
-//    - This method retrieves a list of appointments for a specific doctor on a particular day, optionally filtered by the patient's name.
-//    - It uses `@Transactional` to ensure that database operations are consistent and handled in a single transaction.
-//    - Instruction: Ensure the correct use of transaction boundaries, especially when querying the database for appointments.
+    /**
+     * 1. Book a new appointment entry.
+     */
+    public int bookAppointment(Appointment appointment) {
+        try {
+            if (appointment == null) return 0;
+            appointmentRepository.save(appointment);
+            return 1;
+        } catch (Exception e) {
+            return 0; // Return 0 to gracefully signal a failure back to the controller
+        }
+    }
 
-// 8. **Change Status Method**:
-//    - This method updates the status of an appointment by changing its value in the database.
-//    - It should be annotated with `@Transactional` to ensure the operation is executed in a single transaction.
-//    - Instruction: Add `@Transactional` before this method to ensure atomicity when updating appointment status.
+    /**
+     * 2. Update details on an existing scheduled clinical appointment.
+     */
+    public ResponseEntity<Map<String, String>> updateAppointment(Appointment appointment) {
+        Map<String, String> response = new HashMap<>();
 
+        if (appointment == null || appointment.getId() == null) {
+            response.put("error", "Invalid appointment schema payload");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
 
+        // Check if the target allocation entity footprint is present
+        Optional<Appointment> existingOpt = appointmentRepository.findById(appointment.getId());
+        if (!existingOpt.isPresent()) {
+            response.put("error", "Appointment entry not found");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+        }
+
+        // Cross-examine configuration conflicts utilizing the central engine state checker
+        int validateResult = centralValidationService.validateAppointment(appointment);
+        if (validateResult == 0) {
+            response.put("error", "Requested appointment slot is already taken");
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+        } else if (validateResult == -1) {
+            response.put("error", "Doctor referenced does not exist inside our records");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
+
+        appointmentRepository.save(appointment);
+        response.put("message", "Appointment updated successfully");
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * 3. Cancel an existing appointment slot.
+     */
+    public ResponseEntity<Map<String, String>> cancelAppointment(long id, String token) {
+        Map<String, String> response = new HashMap<>();
+
+        Optional<Appointment> appointmentOpt = appointmentRepository.findById(id);
+        if (!appointmentOpt.isPresent()) {
+            response.put("error", "Appointment not found");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+        }
+
+        Appointment appointment = appointmentOpt.get();
+
+        // Security Assertion: Ensure that the patient executing this cancellation is the owner
+        String callerEmail = tokenService.extractIdentifier(token);
+        Patient patient = appointment.getPatient();
+
+        if (patient == null || !patient.getEmail().equalsIgnoreCase(callerEmail)) {
+            response.put("error", "Unauthorized operation sequence detected. Possession mismatch.");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+        }
+
+        appointmentRepository.delete(appointment);
+        response.put("message", "Appointment canceled successfully");
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * 4. Retrieves appointments scheduled for a specific doctor on a selected date.
+     */
+    public Map<String, Object> getAppointment(String pname, LocalDate date, String token) {
+        Map<String, Object> result = new HashMap<>();
+
+        // Resolve doctor reference identity using incoming caller claim strings
+        String doctorEmail = tokenService.extractIdentifier(token);
+        Doctor doctor = doctorRepository.findByEmail(doctorEmail);
+
+        if (doctor == null) {
+            result.put("error", "Doctor matching session credentials not found");
+            return result;
+        }
+
+        // Establish strict bounds tracking the 24-hour timeframe for the query
+        LocalDateTime startOfDay = date.atStartOfDay();
+        LocalDateTime endOfDay = date.atTime(LocalTime.MAX);
+
+        // Fetch associated structural entries from the repository layer
+        List<Appointment> appointments = appointmentRepository
+                .findByDoctorIdAndAppointmentTimeBetween(doctor.getId(), startOfDay, endOfDay);
+
+        // Filter the output collection if a specific patient name pattern is provided
+        if (pname != null && !pname.trim().isEmpty()) {
+            appointments = appointments.stream()
+                    .filter(a -> a.getPatient() != null && 
+                            a.getPatient().getName().toLowerCase().contains(pname.toLowerCase()))
+                    .collect(Collectors.toList());
+        }
+
+        result.put("appointments", appointments);
+        return result;
+    }
 }
